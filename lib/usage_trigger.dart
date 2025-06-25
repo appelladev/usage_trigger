@@ -1,77 +1,65 @@
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:synchronized/synchronized.dart';
+import 'package:flutter/material.dart';
+import 'package:usage_trigger/trigger_when_due.dart';
 
-// Map to hold locks per trigger ID to avoid race conditions
-final Map<String, Lock> _triggerLocks = {};
+/// A Flutter widget that wraps a child widget and triggers an async callback
+/// when specified usage conditions are met, using the [triggerWhenDue] function.
+/// The conditions include an initial delay since first use, a minimum number of
+/// events, and a frequency for subsequent triggers.
+///
+/// This widget is stateless in its UI, passing through the provided [child] widget,
+/// but manages state to initialize the trigger logic in [initState].
+class UsageTrigger extends StatefulWidget {
+  /// The widget to be displayed as the content of this [UsageTrigger].
+  final Widget child;
 
-/// Triggers the provided async callback when usage conditions are due to be met:
-/// - initialDelay: wait at least this duration since first use/event
-/// - minEvents: require this many calls to this function
-/// - frequency: wait this duration after last successful trigger
-/// The callback is invoked but its result is not returned; on success the last trigger timestamp is updated,
-/// on failure it will retry on next check.
-Future<void> triggerWhenDue({
-  /// Unique identifier for this trigger instance (used for pref keys).
-  required String id,
+  /// Unique identifier for this trigger instance (used for preference keys).
+  final String id;
 
-  /// Duration to wait after first event before triggering.
-  required Duration initialDelay,
+  /// Duration to wait after the first event before allowing a trigger.
+  final Duration initialDelay;
 
-  /// Minimum number of events (function calls) before triggering.
-  required int minEvents,
+  /// Minimum number of events (calls to [triggerWhenDue]) required before triggering.
+  final int minEvents;
 
-  /// Duration to wait after triggering before allowing the next trigger.
-  required Duration frequency,
+  /// Duration to wait after a successful trigger before allowing the next trigger.
+  final Duration frequency;
 
-  /// Async callback invoked when conditions are due. Should return true on success.
-  required Future<bool> Function() onTrigger,
-}) async {
-  // Acquire or create a lock for this ID
-  final lock = _triggerLocks.putIfAbsent(id, () => Lock());
+  /// Async callback invoked when usage conditions are met. Should return `true` on success.
+  final Future<bool> Function() onTrigger;
 
-  await lock.synchronized(() async {
-    final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now();
-
-    final keyFirst = 'usage_trigger_${id}_first_event';
-    final keyCount = 'usage_trigger_${id}_event_count';
-    final keyLastTime = 'usage_trigger_${id}_last_trigger';
-
-    // 1) Store first event timestamp if not present
-    if (!prefs.containsKey(keyFirst)) {
-      await prefs.setInt(keyFirst, now.millisecondsSinceEpoch);
-    }
-
-    // 2) Increment event count
-    final newCount = (prefs.getInt(keyCount) ?? 0) + 1;
-    await prefs.setInt(keyCount, newCount);
-
-    // 3) Check initial delay and minimum events
-    final firstEvent = DateTime.fromMillisecondsSinceEpoch(
-      prefs.getInt(keyFirst)!,
-    );
-    if (now.difference(firstEvent) < initialDelay) return;
-    if (newCount < minEvents) return;
-
-    // 4) Check frequency since last trigger
-    if (prefs.containsKey(keyLastTime)) {
-      final last = DateTime.fromMillisecondsSinceEpoch(
-        prefs.getInt(keyLastTime)!,
-      );
-      if (now.difference(last) < frequency) return;
-    }
-
-    // 5) Conditions met: attempt trigger
-    bool success = false;
-    try {
-      success = await onTrigger();
-    } catch (_) {
-      success = false;
-    }
-
-    // 6) Persist last trigger time only on success
-    if (success) {
-      await prefs.setInt(keyLastTime, now.millisecondsSinceEpoch);
-    }
+  const UsageTrigger({
+    super.key,
+    required this.child,
+    required this.id,
+    required this.initialDelay,
+    required this.minEvents,
+    required this.frequency,
+    required this.onTrigger,
   });
+
+  @override
+  State<UsageTrigger> createState() => _UsageTriggerState();
+}
+
+/// The state class for [UsageTrigger], responsible for initializing the trigger logic.
+class _UsageTriggerState extends State<UsageTrigger> {
+  @override
+  void initState() {
+    super.initState();
+
+    /// Initializes the trigger logic by calling [triggerWhenDue] with the widget's properties.
+    triggerWhenDue(
+      id: widget.id,
+      initialDelay: widget.initialDelay,
+      minEvents: widget.minEvents,
+      frequency: widget.frequency,
+      onTrigger: widget.onTrigger,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    /// Returns the [child] widget, rendering it without modification.
+    return widget.child;
+  }
 }

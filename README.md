@@ -52,27 +52,32 @@ void example() async {
   );
 }
 ```
-Using the PeriodicTrigger
+Using the TriggerPoint
 ```dart
 import 'package:flutter/material.dart';
 import 'package:usage_trigger/usage_trigger.dart';
 
+void main() => runApp(const MyApp());
+
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: PeriodicTrigger(
-          id: 'my_feature',
-          initialDelay: Duration(days: 1),
-          minEvents: 5,
-          frequency: Duration(hours: 24),
-          checkInterval: Duration(seconds: 30),
-          onTrigger: () async {
-            print('Widget trigger activated!');
-            return true;
-          },
-          child: Center(child: Text('My App')),
+        body: Center(
+          child: TriggerPoint(
+            id: 'text_trigger',
+            initialDelay: const Duration(seconds: 5),
+            minEvents: 3,
+            frequency: const Duration(hours: 1),
+            onTrigger: () async {
+              print('Triggered!');
+              return true;
+            },
+            child: const Text('Child'),
+          ),
         ),
       ),
     );

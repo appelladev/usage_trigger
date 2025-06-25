@@ -1,7 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:synchronized/synchronized.dart';
 
-
 // Map to hold locks per trigger ID to avoid race conditions
 final Map<String, Lock> _triggerLocks = {};
 

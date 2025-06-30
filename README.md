@@ -1,7 +1,7 @@
 # usage_trigger
 
 A Flutter package that enables triggering asynchronous actions based on usage conditions,
-such as initial delay, minimum event count, and frequency.
+such as initial delay, minimum event count, frequency, and dependencies on other triggers.
 It provides the UsageTrigger widget for seamless integration into Flutter
 UIs and the triggerWhenDue function for flexible trigger logic.
 
@@ -31,6 +31,13 @@ void example() async {
     initialDelay: Duration(days: 1),
     minEvents: 5,
     frequency: Duration(hours: 24),
+    dependencyConditions: [
+      DependencyCondition(
+        dependentTriggerId: 'other_feature',
+        cooldownPeriod: Duration(hours: 12),
+        mustHaveSucceeded: true,
+      ),
+    ],
     onTrigger: () async {
       // Your action here
       print('Trigger activated!');
@@ -58,6 +65,13 @@ class MyApp extends StatelessWidget {
           initialDelay: Duration(seconds: 5),
           minEvents: 3,
           frequency: Duration(minutes: 2),
+          dependencyConditions: [
+            DependencyCondition(
+              dependentTriggerId: 'another_trigger',
+              cooldownPeriod: Duration(minutes: 1),
+              mustHaveSucceeded: false,
+            ),
+          ],
           onTrigger: () async {
             print('Action triggered!');
             return true;

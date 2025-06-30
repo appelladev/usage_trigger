@@ -4,7 +4,7 @@ import 'package:usage_trigger/trigger_when_due.dart';
 /// A Flutter widget that wraps a child widget and triggers an async callback
 /// when specified usage conditions are met, using the [triggerWhenDue] function.
 /// The conditions include an initial delay since first use, a minimum number of
-/// events, and a frequency for subsequent triggers.
+/// events, a frequency for subsequent triggers, and dependencies on other triggers.
 ///
 /// This widget is stateless in its UI, passing through the provided [child] widget,
 /// but manages state to initialize the trigger logic in [initState].
@@ -27,6 +27,11 @@ class UsageTrigger extends StatefulWidget {
   /// Async callback invoked when usage conditions are met. Should return `true` on success.
   final Future<bool> Function() onTrigger;
 
+  /// A list of conditions specifying dependencies on other triggers,
+  /// defining whether and when those triggers must have succeeded (or not)
+  /// to allow this trigger to execute.
+  final List<DependencyCondition> dependencyCondition;
+
   const UsageTrigger({
     super.key,
     required this.child,
@@ -35,6 +40,7 @@ class UsageTrigger extends StatefulWidget {
     required this.minEvents,
     required this.frequency,
     required this.onTrigger,
+    required this.dependencyCondition,
   });
 
   @override
@@ -54,6 +60,7 @@ class _UsageTriggerState extends State<UsageTrigger> {
       minEvents: widget.minEvents,
       frequency: widget.frequency,
       onTrigger: widget.onTrigger,
+      dependencyConditions: widget.dependencyCondition,
     );
   }
 
